@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  email String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignments Assignment[]
+  guards      Guard[]
+}
+
+model Assignment {
+  id Int @id @default(autoincrement())
+
+  date DateTime
+  task TaskType
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([date, userId])
+}
+
+model Guard {
+  id Int @id @default(autoincrement())
+
+  date  DateTime
+  guard GuardType
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([date, guard])
+  @@unique([date, userId])
+}
+
+enum TaskType {
+  VERIFICATION_DE_DOSSIERS_1
+  VALIDATIONS_DE_DOSSIERS_ET_PREPARATION_CQ_1
+  VERIFICATION_DE_DOSSIERS_2
+  VALIDATIONS_DE_DOSSIERS_ET_PREPARATION_CQ_2
+  GARDE_APPAREIL
+  CURIETHERAPIE
+  GESTION_CQ_APPAREIL
+  SUPPORT_DOSIMETRIE
+}
+
+enum GuardType {
+  GARDE_MATIN
+  GARDE_SOIR
+  GARDE_IRM_MATIN
+  GARDE_IRM_SOIR
+}
