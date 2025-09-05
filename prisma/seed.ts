@@ -1,7 +1,7 @@
 // import { PrismaClient, Prisma } from "@prisma/client";
 
 import { isWeekend } from "@/app/helpers/Date";
-import { PrismaClient } from "@prisma/client";
+import { Guard, PrismaClient, User } from "@prisma/client";
 // import { Prisma, PrismaClient } from "@prisma/client";
 // import { PrismaClient } from "@prisma/client/edge";
 // import { withAccelerate } from "@prisma/extension-accelerate";
@@ -60,27 +60,45 @@ function generateWeeklyAssignments(year: number, userIndex: number) {
   return assignments;
 }
 
-// TODO: Fix guard generation
-function generateDailyGuards(year: number, userIndex: number) {
-  const guards = [];
-  let guardIndex = userIndex % GUARDS.length; // each user starts at a different guard
+function generateYearlyGuards(users: User[], year: number) {
+  const guards: Pick<Guard, "date" | "guard" | "userId">[] = [];
 
+  const start = new Date(year, 0, 1);
+
+  // aller semaine par semaine
   for (let week = 0; week < 52; week++) {
-    for (let day = 0; day < 7; day++) {
-      // For each guard type
-      for (const guard of GUARDS) {
-        const date = new Date(year, 0, 1 + week * 7 + day); // Monday of each week
-        if (isWeekend(date)) continue; // skip weekends
-        guards.push({
-          date,
-          guard,
-        });
-      }
-      guardIndex = (guardIndex + 1) % GUARDS.length; // roll to next guard
-    }
-  }
+    const monday = new Date(start);
+    monday.setDate(start.getDate() + week * 7);
 
-  console.log(guards);
+    // Les 5 jours ouvrés de la semaine
+    const weekdays: Date[] = [];
+    for (let offset = 0; offset < 7; offset++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + offset);
+      if (!isWeekend(d)) weekdays.push(d);
+      if (weekdays.length === 5) break;
+    }
+
+    // Distribution : chaque user = 1 matin + 1 soir
+    users.forEach((user, i) => {
+      const matinDay = weekdays[i % 5]; // tourne sur les 5 jours
+      const soirDay = weekdays[(i + 2) % 5]; // un autre jour de la semaine
+
+      // matin
+      guards.push({
+        date: matinDay,
+        guard: i % 2 === 0 ? "GARDE_MATIN" : "GARDE_IRM_MATIN",
+        userId: user.id,
+      });
+
+      // soir
+      guards.push({
+        date: soirDay,
+        guard: i % 2 === 0 ? "GARDE_SOIR" : "GARDE_IRM_SOIR",
+        userId: user.id,
+      });
+    });
+  }
 
   return guards;
 }
@@ -100,62 +118,20 @@ export async function main() {
         assignments: {
           create: generateWeeklyAssignments(year, index),
         },
-        // guards: {
-        //   create: generateDailyGuards(year, index),
-        // },
       },
     });
   }
 
-  // for (const user of USERS) {
-  //   await prisma.user.create({
-  //     data: {
-  //       name: user.name,
-  //       email: user.email,
-  //       assignments: {
-  //         create: generateWeeklyAssignments(year, assignmentsPerUser),
-  //       },
-  //     },
-  //   });
-  // }
+  const users = await prisma.user.findMany();
 
-  // await prisma.user.create({
-  //   data: {
-  //     name: "Roxane",
-  //     email: "roxane.lahady@curie.fr",
-  //     assignments: {
-  //       create: [
-  //         {
-  //           date: new Date("2025-01-01"),
-  //           task: "VERIFICATION_DE_DOSSIERS_1",
-  //         },
-  //         {
-  //           date: new Date("2025-01-02"),
-  //           task: "VALIDATIONS_DE_DOSSIERS_ET_PREPARATION_CQ_1",
-  //         },
-  //       ],
-  //     },
-  //   },
-  // });
-
-  // await prisma.user.create({
-  //   data: {
-  //     name: "Rezart",
-  //     email: "rezart.belchi@curie.fr",
-  //     assignments: {
-  //       create: [
-  //         {
-  //           date: new Date("2025-01-01"),
-  //           task: "CURIETHERAPIE",
-  //         },
-  //         {
-  //           date: new Date("2025-01-02"),
-  //           task: "GESTION_CQ_APPAREIL",
-  //         },
-  //       ],
-  //     },
-  //   },
-  // });
+  const guards = generateYearlyGuards(users, year);
+  await prisma.guard.createMany({
+    data: guards.map((guard) => ({
+      date: guard.date,
+      guard: guard.guard,
+      userId: guard.userId,
+    })),
+  });
 }
 
 main();
