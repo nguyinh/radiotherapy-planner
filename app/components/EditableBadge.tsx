@@ -41,7 +41,7 @@ export function EditableBadge({ assignmentId, onChange, task }: IProps) {
         {currentLabel}
       </button>
       {open && (
-        <div className="flex flex-col gap-1 absolute z-40 mt-1 w-72 max-h-64 overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg p-1">
+        <div className="flex flex-col gap-1 absolute z-40 mt-1 w-72 overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg p-1">
           <OptionRow
             active={!assignmentId}
             label="(Aucune)"
@@ -86,7 +86,7 @@ function OptionRow({
   return (
     <button
       className={`w-full text-left px-2 py-1.5 rounded-lg border ${base} ${
-        active ? "ring-1 ring-black/40" : "hover:bg-gray-100 opacity-60"
+        active ? "ring-1 ring-black/40" : "hover:bg-gray-100 opacity-80"
       }`}
       onClick={onClick}
     >
