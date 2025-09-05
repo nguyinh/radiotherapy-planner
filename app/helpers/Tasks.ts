@@ -21,7 +21,7 @@ export const TASK_LABELS: Record<Assignment["task"], string> = {
   VALIDATIONS_DE_DOSSIERS_ET_PREPARATION_CQ_2:
     "Validations de dossiers et préparation CQ 2",
   GARDE_APPAREIL: "Garde appareil",
-  CURIETHERAPIE: "Curithérapie",
+  CURIETHERAPIE: "Curiethérapie",
   GESTION_CQ_APPAREIL: "Gestion CQ appareil",
   SUPPORT_DOSIMETRIE: "Support dosimétrie",
 };
