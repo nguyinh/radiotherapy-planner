@@ -1,13 +1,4 @@
-import { Assignment, User } from "@prisma/client";
-
-type AssignmentWithUser = Pick<
-  Assignment,
-  "id" | "date" | "task" | "userId"
-> & {
-  user: Pick<User, "name">;
-};
-
-// export type AssignmentsByUser = { [key: User["name"]]: AssignmentWithUser[] };
+import { Assignment, Guard, GuardType, User } from "@prisma/client";
 
 export type UserAssignments = {
   assignments: Pick<Assignment, "id" | "date" | "task">[];
@@ -16,4 +7,14 @@ export type UserAssignments = {
 
 export type AssignmentsByUser = {
   [key: User["name"]]: UserAssignments;
+};
+
+export type UserGuard = {
+  id: Guard["id"];
+  guard: GuardType;
+  date: Date;
+  user: {
+    name: string;
+    id: number;
+  };
 };

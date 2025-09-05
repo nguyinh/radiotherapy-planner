@@ -53,7 +53,6 @@ model Guard {
   updatedAt DateTime @updatedAt
 
   @@unique([date, guard])
-  @@unique([date, userId])
 }
 
 enum TaskType {

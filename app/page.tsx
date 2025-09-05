@@ -6,6 +6,7 @@ import {
   // groupAssignementsByUsers,
   // sortByDate,
 } from "./helpers/Assignements";
+import { mapGuardsToDays } from "./helpers/GuardHelper";
 
 export const yearDays = daysOfYear(2025);
 
@@ -30,6 +31,33 @@ export default async function Home() {
     },
   });
 
+  const userList = userAssignments.map((user) => ({
+    id: user.id,
+    name: user.name,
+  }));
+
+  const dailyGuards = await prisma.guard.findMany({
+    where: {
+      date: {
+        gte: new Date(2025, 0, 1),
+        lte: new Date(2025, 11, 31),
+      },
+    },
+    select: {
+      id: true,
+      guard: true,
+      date: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+
+  const groupedDailyGuards = mapGuardsToDays(dailyGuards);
+
   const formattedUserAssignments = formatUserAssignments(userAssignments);
 
   return (
@@ -39,10 +67,8 @@ export default async function Home() {
           year={2025}
           assignmentsByUsers={formattedUserAssignments}
           days={yearDays}
-          // assignments={assignments}
-          // dailyGuards={dailyGuards}
-          // onAssign={(updatedAssignment) => console.log({ updatedAssignment })}
-          // onGuardChange={handleGuardChange}
+          groupedDailyGuards={groupedDailyGuards}
+          userList={userList}
         />
       </section>
     </div>

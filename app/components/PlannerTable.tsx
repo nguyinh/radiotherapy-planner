@@ -1,29 +1,35 @@
 "use client";
 
 import React, { useRef, useMemo, useTransition } from "react";
-import { formatDayHeader, isWeekend } from "../helpers/Date";
-import type { UserAssignments } from "../types";
-import { mapToDaysArray } from "../helpers/Assignements";
-import { EditableBadge } from "./EditableBadge";
+import { formatDayHeader, indexToDate, isWeekend } from "../helpers/Date";
+import type { UserAssignments, UserGuard } from "../types";
 import { $Enums, User } from "@prisma/client";
 import { setAssignment } from "../actions/assignments";
 import { useRouter } from "next/navigation";
+import { UserTasks } from "./UserTasks";
+import { mapGuardsToDays } from "../helpers/GuardHelper";
+import { GuardsRow } from "./GuardsRow";
+import { setGuard } from "../actions/guards";
 
 interface IProps {
   year: number;
   assignmentsByUsers: UserAssignments[];
   days: Date[];
+  groupedDailyGuards: ReturnType<typeof mapGuardsToDays>;
+  userList: Pick<User, "id" | "name">[];
 }
 
 export function PlannerTable({
   year,
   assignmentsByUsers,
   days,
-}: // dailyGuards,
-// onGuardChange,
-IProps) {
+  groupedDailyGuards,
+  userList,
+}: IProps) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+
+  console.log({ isPending });
 
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -52,9 +58,59 @@ IProps) {
     });
   };
 
+  const handleGuardChange = (
+    date: Date,
+    userId: User["id"] | null,
+    guardType: $Enums.GuardType
+  ) => {
+    console.log({ date, userId, guardType });
+
+    startTransition(() => {
+      setGuard({ date, userId, guardType });
+      router.refresh();
+    });
+  };
+
+  const morningGuards = groupedDailyGuards.map<
+    Partial<UserGuard> & Pick<UserGuard, "date">
+  >((guard, guardIndex) => {
+    return guard.GARDE_MATIN
+      ? guard.GARDE_MATIN
+      : {
+          date: indexToDate(guardIndex, year),
+        };
+  });
+  const eveningGuards = groupedDailyGuards.map<
+    Partial<UserGuard> & Pick<UserGuard, "date">
+  >((guard, guardIndex) => {
+    return guard.GARDE_SOIR
+      ? guard.GARDE_SOIR
+      : {
+          date: indexToDate(guardIndex, year),
+        };
+  });
+  const morningMriGuards = groupedDailyGuards.map<
+    Partial<UserGuard> & Pick<UserGuard, "date">
+  >((guard, guardIndex) => {
+    return guard.GARDE_IRM_MATIN
+      ? guard.GARDE_IRM_MATIN
+      : {
+          date: indexToDate(guardIndex, year),
+        };
+  });
+  const eveningMriGuards = groupedDailyGuards.map<
+    Partial<UserGuard> & Pick<UserGuard, "date">
+  >((guard, guardIndex) => {
+    return guard.GARDE_IRM_SOIR
+      ? guard.GARDE_IRM_SOIR
+      : {
+          date: indexToDate(guardIndex, year),
+        };
+  });
+
   return (
-    <div ref={containerRef} className="overflow-auto max-h-[72vh] min-h-[72vh]">
-      <table className="min-w-full border-separate border-spacing-0">
+    <div ref={containerRef} className="overflow-auto max-h-[72vh] min-h-dvh">
+      <table className="min-w-full border-separate border-spacing-0 text-xs">
         <thead className="sticky top-0 z-20">
           {/* Ligne mois */}
           <tr>
@@ -75,7 +131,7 @@ IProps) {
           </tr>
           {/* Ligne jours */}
           <tr>
-            <th className="sticky left-0 z-30 bg-white border-b border-gray-200 text-left px-3 py-2">
+            <th className="sticky left-0 z-30 min-w-32 bg-white border-b border-gray-200 text-left px-3 py-2">
               &nbsp;
             </th>
             {days.map((d, idx) => {
@@ -98,41 +154,50 @@ IProps) {
         </thead>
 
         <tbody>
-          {assignmentsByUsers.map((assignmentsByUser) => {
-            const { user, assignments } = assignmentsByUser;
+          <GuardsRow
+            guardType={$Enums.GuardType.GARDE_MATIN}
+            guards={morningGuards}
+            userList={userList}
+            onChange={(date, userId, guardType) => {
+              handleGuardChange(date, userId, guardType);
+            }}
+          />
+          <GuardsRow
+            guardType={$Enums.GuardType.GARDE_SOIR}
+            guards={eveningGuards}
+            userList={userList}
+            onChange={(date, userId, guardType) => {
+              handleGuardChange(date, userId, guardType);
+            }}
+          />
+          <GuardsRow
+            guardType={$Enums.GuardType.GARDE_IRM_MATIN}
+            guards={morningMriGuards}
+            userList={userList}
+            onChange={(date, userId, guardType) => {
+              handleGuardChange(date, userId, guardType);
+            }}
+          />
+          <GuardsRow
+            guardType={$Enums.GuardType.GARDE_IRM_SOIR}
+            guards={eveningMriGuards}
+            userList={userList}
+            onChange={(date, userId, guardType) => {
+              handleGuardChange(date, userId, guardType);
+            }}
+          />
 
-            // Map assignments by date on array index with 0 being January 1st
-            const assignmentsByDate = mapToDaysArray(assignments, year);
+          {/* TODO: add divider */}
 
-            return (
-              <tr key={user.name} className="odd:bg-white even:bg-gray-50">
-                <th className="sticky left-0 z-10 bg-inherit border-b border-gray-200 text-left px-3 py-2 text-sm font-medium w-48">
-                  {user.name}
-                </th>
-
-                {assignmentsByDate.map((assignment, dateIndex) => (
-                  <td
-                    key={dateIndex}
-                    className="border-b border-gray-200 px-1 py-0.5"
-                  >
-                    <EditableBadge
-                      assignmentId={assignment?.id ?? null}
-                      task={assignment?.task ?? null}
-                      onChange={(selectedTaskType) =>
-                        handleAssignmentChange(
-                          new Date(year, 0, dateIndex + 1),
-                          user.id,
-                          selectedTaskType
-                        )
-                      }
-                    />
-
-                    {/* <div className="h-7 w-28 min-w-[7rem] rounded-md bg-gray-100" /> */}
-                  </td>
-                ))}
-              </tr>
-            );
-          })}
+          {assignmentsByUsers.map((assignmentsByUser) => (
+            <UserTasks
+              key={assignmentsByUser.user.id}
+              year={year}
+              onAssignmentChange={handleAssignmentChange}
+              user={assignmentsByUser.user}
+              assignments={assignmentsByUser.assignments}
+            />
+          ))}
         </tbody>
       </table>
     </div>

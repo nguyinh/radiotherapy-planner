@@ -36,3 +36,17 @@ export function isWeekend(d: Date): boolean {
   const dow = d.getDay();
   return dow === 0 || dow === 6; // Sun or Sat
 }
+
+export function dateToIndex(date: Date): number {
+  const startOfYear = new Date(date.getFullYear(), 0, 1);
+  const diffTime = date.getTime() - startOfYear.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+}
+
+export function indexToDate(index: number, year: number): Date {
+  const startOfYear = new Date(year, 0, 1);
+  const newDate = new Date(startOfYear);
+  newDate.setDate(newDate.getDate() + index);
+  return newDate;
+}
