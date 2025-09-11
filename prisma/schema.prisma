@@ -18,11 +18,16 @@ model User {
   name  String @unique
   email String @unique
 
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   assignments Assignment[]
   guards      Guard[]
+
+  // TODO: add role (admin, user)
 }
 
 model Assignment {

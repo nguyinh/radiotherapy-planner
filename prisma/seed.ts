@@ -106,6 +106,7 @@ function generateYearlyGuards(users: User[], year: number) {
 export async function main() {
   await prisma.user.deleteMany();
   await prisma.assignment.deleteMany();
+  await prisma.guard.deleteMany();
 
   const year = 2025;
   // const assignmentsPerUser = 365;

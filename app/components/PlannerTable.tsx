@@ -5,6 +5,7 @@ import { formatDayHeader, indexToDate, isWeekend } from "../helpers/Date";
 import type { UserAssignments, UserGuard } from "../types";
 import { $Enums, User } from "@prisma/client";
 import { setAssignment } from "../actions/assignments";
+import { generate } from "../actions/dispatch";
 import { useRouter } from "next/navigation";
 import { UserTasks } from "./UserTasks";
 import { mapGuardsToDays } from "../helpers/GuardHelper";
@@ -74,42 +75,53 @@ export function PlannerTable({
   const morningGuards = groupedDailyGuards.map<
     Partial<UserGuard> & Pick<UserGuard, "date">
   >((guard, guardIndex) => {
-    return guard.GARDE_MATIN
-      ? guard.GARDE_MATIN
-      : {
-          date: indexToDate(guardIndex, year),
-        };
+    return (
+      guard.GARDE_MATIN ?? {
+        date: indexToDate(guardIndex, year),
+      }
+    );
   });
   const eveningGuards = groupedDailyGuards.map<
     Partial<UserGuard> & Pick<UserGuard, "date">
   >((guard, guardIndex) => {
-    return guard.GARDE_SOIR
-      ? guard.GARDE_SOIR
-      : {
-          date: indexToDate(guardIndex, year),
-        };
+    return (
+      guard.GARDE_SOIR ?? {
+        date: indexToDate(guardIndex, year),
+      }
+    );
   });
   const morningMriGuards = groupedDailyGuards.map<
     Partial<UserGuard> & Pick<UserGuard, "date">
   >((guard, guardIndex) => {
-    return guard.GARDE_IRM_MATIN
-      ? guard.GARDE_IRM_MATIN
-      : {
-          date: indexToDate(guardIndex, year),
-        };
+    return (
+      guard.GARDE_IRM_MATIN ?? {
+        date: indexToDate(guardIndex, year),
+      }
+    );
   });
   const eveningMriGuards = groupedDailyGuards.map<
     Partial<UserGuard> & Pick<UserGuard, "date">
   >((guard, guardIndex) => {
-    return guard.GARDE_IRM_SOIR
-      ? guard.GARDE_IRM_SOIR
-      : {
-          date: indexToDate(guardIndex, year),
-        };
+    return (
+      guard.GARDE_IRM_SOIR ?? {
+        date: indexToDate(guardIndex, year),
+      }
+    );
   });
 
   return (
     <div ref={containerRef} className="overflow-auto max-h-[72vh] min-h-dvh">
+      <button
+        onClick={() => {
+          generate({
+            startDate: new Date(2025, 1, 1),
+            endDate: new Date(2025, 12, 31),
+          });
+        }}
+      >
+        Generate
+      </button>
+
       <table className="min-w-full border-separate border-spacing-0 text-xs">
         <thead className="sticky top-0 z-20">
           {/* Ligne mois */}

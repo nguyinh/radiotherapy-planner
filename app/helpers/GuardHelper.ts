@@ -5,8 +5,6 @@ import { UserGuard } from "../types";
 export function mapGuardsToDays(
   dailyGuards: UserGuard[]
 ): Record<GuardType, UserGuard | null>[] {
-  console.log({ dailyGuards });
-
   const daysInYear = new Date(2025, 11, 31).getDate() === 31 ? 365 : 366;
 
   const daysArray: Record<GuardType, UserGuard | null>[] = Array.from(
